@@ -10,6 +10,12 @@ writing phrases using the phrase composer menu
 setting the direction of the rainbow effect
 setting the speed of the rainbow effect
 
-Will probably get future code updates to implement more functions. Tips are appreciated.
-
 link of 3d-printed enclosure: https://www.thingiverse.com/thing:4725156
+
+links of all the components used:
+- display: https://www.amazon.it/gp/product/B078HYP681/ref=ppx_yo_dt_b_asin_title_o00_s00?ie=UTF8&psc=1
+- boost converter: https://www.amazon.it/gp/product/B07PMRWRBX/ref=ppx_yo_dt_b_asin_image_o04_s00?ie=UTF8&psc=1
+- dupont connectors: https://www.amazon.it/gp/product/B07DLT56TM/ref=ppx_yo_dt_b_asin_title_o05_s00?ie=UTF8&psc=1
+
+gerber files: https://oshwlab.com/Gaming_Dub/visual-eq
+Will probably get future code updates to implement more functions.
