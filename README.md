@@ -10,6 +10,10 @@ writing phrases using the phrase composer menu
 setting the direction of the rainbow effect
 setting the speed of the rainbow effect
 
+libraries used:
+- neopixel: https://github.com/adafruit/Adafruit_NeoPixel
+- battery: https://github.com/rlogiacco/BatterySense
+
 link of 3d-printed enclosure: https://www.thingiverse.com/thing:4725156
 
 link of gerber files: https://oshwlab.com/Gaming_Dub/visual-eq
