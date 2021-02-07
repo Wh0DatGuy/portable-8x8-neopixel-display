@@ -11,6 +11,7 @@ setting the direction of the rainbow effect
 setting the speed of the rainbow effect
 
 link of 3d-printed enclosure: https://www.thingiverse.com/thing:4725156
+
 link of gerber files: https://oshwlab.com/Gaming_Dub/visual-eq
 
 links of all the components used:
