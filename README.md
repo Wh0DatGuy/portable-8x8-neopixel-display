@@ -24,7 +24,7 @@ links of all the components used:
 - dupont connectors: https://www.amazon.it/gp/product/B07DLT56TM/ref=ppx_yo_dt_b_asin_title_o05_s00?ie=UTF8&psc=1
 - female connector: https://www.amazon.it/ARCELI-Straight-Connector-Assortimento-Prototype/dp/B07Q1XBGFB/ref=sr_1_6?__mk_it_IT=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=PCB+3+Pin&qid=1612886450&s=electronics&sr=1-6 (to solder to led matrix)
 - female jack: https://www.amazon.it/Haljia-supporto-cuffie-connettore-fissaggio/dp/B07422MCSX/ref=sr_1_7?__mk_it_IT=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=PCB+3+Pin&qid=1612886450&s=electronics&sr=1-7
--female micro-usb: https://www.amazon.it/WayinTop-Adattatore-Convertitore-Alimentazione-Breadboard/dp/B07W13X3TD/ref=sr_1_6?__mk_it_IT=%C3%85M%C3%85%C5%BD%C3%95%C3%91&crid=9YD38PP5X1I8&dchild=1&keywords=usb+breakout+board&qid=1612886493&sprefix=usb+brea%2Celectronics%2C157&sr=8-6
+- female micro-usb: https://www.amazon.it/WayinTop-Adattatore-Convertitore-Alimentazione-Breadboard/dp/B07W13X3TD/ref=sr_1_6?__mk_it_IT=%C3%85M%C3%85%C5%BD%C3%95%C3%91&crid=9YD38PP5X1I8&dchild=1&keywords=usb+breakout+board&qid=1612886493&sprefix=usb+brea%2Celectronics%2C157&sr=8-6
 - battery spring: https://www.amazon.it/NO-LOGO-DAJIE-TANGHUANG-batterie-Universal/dp/B08638GWW5/ref=sr_1_51?__mk_it_IT=%C3%85M%C3%85%C5%BD%C3%95%C3%91&dchild=1&keywords=aa+battery+spring&qid=1612887139&sr=8-51
 
 Will probably get future code updates to implement more functions.
