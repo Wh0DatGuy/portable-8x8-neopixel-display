@@ -167,7 +167,7 @@ void LettMenu() {
   static bool MemEn = false;
   static byte k, Phrase[32];
   static long t2, t3;
-  strip.clear();
+  //strip.clear();
   if (digitalRead(B_1) || digitalRead(B_3)) {
     t2 = millis();
     MemEn = true;
