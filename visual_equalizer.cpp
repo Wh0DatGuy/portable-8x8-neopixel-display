@@ -167,7 +167,6 @@ void LettMenu() {
   static bool MemEn = false;
   static byte k, Phrase[32];
   static long t2, t3;
-  //strip.clear();
   if (digitalRead(B_1) || digitalRead(B_3)) {
     t2 = millis();
     MemEn = true;
@@ -198,7 +197,7 @@ void LettMenu() {
   DAlphabetOrRainbow(0, LettNumb);
 }
 ///////////////////////////////////MENU///////////////////////////////////////////////////////////////////////////////////////////
-bool EnSwitchFn = true, fMenuLabel;
+bool fMenuLabel;
 void MenuLettSel() {
   switch (MenuMode) {
   case 0 /*brightness*/:
@@ -231,7 +230,7 @@ void BttItf() {
         MenuMode++;
       else
         MenuMode = 0;
-    } else if (EnSwitchFn) {
+    } else if (!fMenuLabel) {
       switch (MenuMode) {
       case 0 /*brightness*/:
         Brighty = IncrDecr(255, Brighty, 15);
@@ -274,19 +273,16 @@ void setup() {
   digitalWrite(RESET_PIN, LOW);
   digitalWrite(STROBE_PIN, HIGH);
   strip.setBrightness(Brighty);
-  //Serial.begin(9600);
 }
 
 void loop() {
   strip.clear();
 
   BttItf();
-  EnSwitchFn = false;
   if (((millis() - t4) <= LettDelay)) {
     fMenuLabel = true;
     MenuLettSel();
   } else fMenuLabel = false;
-  EnSwitchFn = true;
 
   if (digitalRead(B_2) || fMenuLabel) {
   } else if (MenuMode == 3)
@@ -300,12 +296,4 @@ void loop() {
     BattLevel();
   }
   strip.show();
-  /*static int FrameCount;
-    static long t6;
-    FrameCount++;
-    if (millis() - t6 >= 1000) {
-    Serial.println(FrameCount / 1);
-    FrameCount = 0;
-    t6 = millis();
-    }*/
 }
