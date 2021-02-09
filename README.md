@@ -1,4 +1,5 @@
 # portable-8x8-neopixel-display
+The pictures on thingiverse are of a prototype, so there's components soldered around. The new boards are already updated to include those components.
 This is a visual equalizer that uses an 8x8 neopixel grid to display 7 audio bands (using the MSGEQ7 chip from sparkfun) while the last column is used to display the battery level.
 Inside is an arduino uno with a custom shield, powered by a 18650 battery, with charge and converter board.
 Using the buttons on the side it is capable of:
