@@ -199,6 +199,29 @@ void LettMenu() {
 }
 ///////////////////////////////////MENU///////////////////////////////////////////////////////////////////////////////////////////
 bool EnSwitchFn = true, fMenuLabel;
+void MenuLettSel() {
+  switch (MenuMode) {
+  case 0 /*brightness*/:
+    MenuLett = 1; //B
+    break;
+  case 1 /*volume*/:
+    MenuLett = 21; //V
+    break;
+  case 2 /*orientation*/:
+    MenuLett = 14; //O
+    break;
+  case 3 /*writing mode*/:
+    MenuLett = 22; //W
+    break;
+  case 4 /*direction*/:
+    MenuLett = 3; //D
+    break;
+  case 5 /*speed*/:
+    MenuLett = 18; //S
+    break;
+  }
+  DAlphabetOrRainbow(0, MenuLett);
+}
 void BttItf() {
   if (millis() - t1 >= SwDelay) {
     if (digitalRead(B_2)) {
@@ -233,39 +256,10 @@ void BttItf() {
         break;
       }
     }
-    EnSwitchFn = false;
-    if (((millis() - t4) <= LettDelay)) {
-      fMenuLabel = true;
-    } else fMenuLabel = false;
-    EnSwitchFn = true;
   } else if ((!digitalRead(B_1)) && (!digitalRead(B_2)) && (!digitalRead(B_3)))
     t1 = millis() + SwDelay;
 }
-void MenuLettSel() {
-  switch (MenuMode) {
-  case 0 /*brightness*/:
-    MenuLett = 1; //B
-    break;
-  case 1 /*volume*/:
-    MenuLett = 21; //V
-    break;
-  case 2 /*orientation*/:
-    MenuLett = 14; //O
-    break;
-  case 3 /*writing mode*/:
-    MenuLett = 22; //W
-    break;
-  case 4 /*direction*/:
-    MenuLett = 3; //D
-    break;
-  case 5 /*speed*/:
-    MenuLett = 18; //S
-    break;
-  }
-  BttItf();
-  DAlphabetOrRainbow(0, MenuLett);
-  strip.show();
-}
+
 
 ///////////////////////////////////MAIN PROGRAM///////////////////////////////////////////////////////////////////////////////////
 void setup() {
@@ -287,9 +281,12 @@ void loop() {
   strip.clear();
 
   BttItf();
-  if (fMenuLabel) {
+  EnSwitchFn = false;
+  if (((millis() - t4) <= LettDelay)) {
+    fMenuLabel = true;
     MenuLettSel();
-  }
+  } else fMenuLabel = false;
+  EnSwitchFn = true;
 
   if (digitalRead(B_2) || fMenuLabel) {
   } else if (MenuMode == 3)
