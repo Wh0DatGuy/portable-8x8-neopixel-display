@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 #include <Battery.h>
-///////////////////////////////////PINS///////////////////////////////////////////////////////////////////////////////////////////
+#include <letters.h>
+//pins
 #define STROBE_PIN 4
 #define ANALOG_PIN A0
 #define BattRead A4
@@ -12,43 +13,28 @@
 #define B_1 10
 #define B_2 9
 #define B_3 8
-///////////////////////////////////DELAYS/////////////////////////////////////////////////////////////////////////////////////////
+//delay values
 #define InitSensy 630
 #define SwDelay 300
 #define LettDelay 1000
 #define LettOffDelay 500
-///////////////////////////////////CONSTANT VARIABLES/////////////////////////////////////////////////////////////////////////////
+//constant variables
 #define EqAnBars 7
 #define VOres 8
-///////////////////////////////////GLOBAL VARIABLES///////////////////////////////////////////////////////////////////////////////
+//global variables
 int bandValues[EqAnBars], oBandValues, bandNo;
 byte j;
 byte MenuMode = 0, DisplayMode = 0;
-int Sensy, Brighty, Speedy = 8;//Lower means faster;
-bool Direction = 0;
+int Sensy;
+byte Brighty, Speedy = 8;
+bool Direction = 0, fMenuLabel;
 byte fMode;
-long t1, t4, t5 = 1000;
+long t1, t4, t5;
 byte LettNumb = 0, MenuLett;
-#include <letters.h> //include the letter array
-///////////////////////////////////LIBRARY INITIALIZATIONS////////////////////////////////////////////////////////////////////////
+//library initializations
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(64, WS2812_PIN, NEO_GRB + NEO_KHZ800);
 Battery battery(3400, 4000, BattRead);
-///////////////////////////////////INCREASE OR DECREASE VALUES////////////////////////////////////////////////////////////////////
-int IncrDecr(int MaxVal, int Val, byte Step) {
-  if (digitalRead(B_3)) {
-    Val += Step;
-    t1 = millis();
-  } else if (digitalRead(B_1)) {
-    Val -= Step;
-    t1 = millis();
-  }
-  if (Val > MaxVal)
-    Val = MaxVal;
-  else if (Val < Step)
-    Val = 0;
-  return Val;
-}
-///////////////////////////////////RAINBOW TOOLS//////////////////////////////////////////////////////////////////////////////////
+//cycle trough colours to create rainbow effect
 void increasej() {
   static long t0;
   if ((millis() - t0) >= Speedy) {
@@ -62,6 +48,7 @@ void increasej() {
     t0 = millis();
   }
 }
+//generates a color based on a 255 value
 uint32_t Wheel(byte WheelPos) {
   if (WheelPos < 85) {
     return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
@@ -73,7 +60,7 @@ uint32_t Wheel(byte WheelPos) {
     return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
   }
 }
-///////////////////////////////////VISUAL EQUALIZER///////////////////////////////////////////////////////////////////////////////
+//read MSGEQ7 and store in an array
 void readMSGEQ7() {
   digitalWrite(RESET_PIN, HIGH);
   digitalWrite(RESET_PIN, LOW);
@@ -87,19 +74,17 @@ void readMSGEQ7() {
     if (bandValues[bandNo] > oBandValues)
       oBandValues = bandValues[bandNo];
   }
-}
-void BarResize() {
   if (oBandValues >= Sensy)
     oBandValues--;
   else if (Sensy == InitSensy)
     oBandValues = Sensy; //always fit bars on 8 pixels
 }
+//visual equalizer
 void VisualEq() {
   readMSGEQ7();
-  BarResize();
   for (bandNo = 0; bandNo < EqAnBars; bandNo++) {
-    int toY = map(bandValues[bandNo], 30, oBandValues, 0, VOres);
-    for (int y = 0; y < toY; y++) {
+    byte toY = map(bandValues[bandNo], 30, oBandValues, 0, VOres);
+    for (byte y = 0; y < toY; y++) {
       switch (DisplayMode) {
       case 0 /*vertical bars*/:
         fMode = (bandNo * VOres) + y;
@@ -112,7 +97,7 @@ void VisualEq() {
     }
   }
 }
-///////////////////////////////////DISPLAY BATTERY LEVEL//////////////////////////////////////////////////////////////////////////
+//Calculate and display battery level
 void BattLevel() {
   static byte BattToPixel;
   if (millis() - t5 >= 1000) {
@@ -131,9 +116,8 @@ void BattLevel() {
     strip.setPixelColor(fMode, Wheel((VOres * EqAnBars) + i + j));
   }
 }
-///////////////////////////////////DISPLAY LETTERS OR RAINBOW/////////////////////////////////////////////////////////////////////
-void DAlphabetOrRainbow(byte DMode, byte SLettNumber) {
-  increasej();
+//display letters or full screen rainbow effect
+void DAlphabetOrRainbow(byte DMode, byte SLettNumber = 0) {
   for (byte h = 0; h < VOres; h++) {
     for (byte l = 0; l < VOres; l++) {
       switch (DisplayMode) {
@@ -157,12 +141,13 @@ void DAlphabetOrRainbow(byte DMode, byte SLettNumber) {
     }
   }
 }
-///////////////////////////////////LETTER MENU////////////////////////////////////////////////////////////////////////////////////
+//clear display for DelayVal seconds
 void ClearWithDelay(int DelayVal) {
   strip.clear();
   strip.show();
   delay(DelayVal);
 }
+//letter menu to compose phrases
 void LettMenu() {
   static bool MemEn = false;
   static byte k, Phrase[32];
@@ -196,8 +181,7 @@ void LettMenu() {
   }
   DAlphabetOrRainbow(0, LettNumb);
 }
-///////////////////////////////////MENU///////////////////////////////////////////////////////////////////////////////////////////
-bool fMenuLabel;
+//displays associated letter when menu is changed
 void MenuLettSel() {
   switch (MenuMode) {
   case 0 /*brightness*/:
@@ -221,7 +205,23 @@ void MenuLettSel() {
   }
   DAlphabetOrRainbow(0, MenuLett);
 }
-void BttItf() {
+//increase or decrease to 0 given value using 2 buttons
+int IncrDecr(int MaxVal, int Val, byte Step) {
+  if (digitalRead(B_3)) {
+    Val += Step;
+    t1 = millis();
+  } else if (digitalRead(B_1)) {
+    Val -= Step;
+    t1 = millis();
+  }
+  if (Val > MaxVal)
+    Val = MaxVal;
+  else if (Val < Step)
+    Val = 0;
+  return Val;
+}
+//change selected menu using B2
+void Menu() {
   if (millis() - t1 >= SwDelay) {
     if (digitalRead(B_2)) {
       t1 = millis();
@@ -257,9 +257,12 @@ void BttItf() {
     }
   } else if ((!digitalRead(B_1)) && (!digitalRead(B_2)) && (!digitalRead(B_3)))
     t1 = millis() + SwDelay;
+
+  if (((millis() - t4) <= LettDelay)) {
+    fMenuLabel = true;
+    MenuLettSel();
+  } else fMenuLabel = false;
 }
-
-
 ///////////////////////////////////MAIN PROGRAM///////////////////////////////////////////////////////////////////////////////////
 void setup() {
   strip.begin();
@@ -277,20 +280,16 @@ void setup() {
 
 void loop() {
   strip.clear();
+  increasej();
 
-  BttItf();
-  if (((millis() - t4) <= LettDelay)) {
-    fMenuLabel = true;
-    MenuLettSel();
-  } else fMenuLabel = false;
+  Menu();
 
   if (digitalRead(B_2) || fMenuLabel) {
   } else if (MenuMode == 3)
     LettMenu();
   else if ((MenuMode == 4) || (MenuMode == 5))
-    DAlphabetOrRainbow(1, 0);
+    DAlphabetOrRainbow(1);
   else {
-    increasej();
     //if(digitalRead(BATTVS)) //remove "//" when circuit upgraded
     VisualEq();
     BattLevel();
