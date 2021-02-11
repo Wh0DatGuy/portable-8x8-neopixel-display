@@ -167,6 +167,7 @@ void LettMenu() {
     t3 = millis();
     while (i < k) {
       strip.clear();
+      increasej();
       DAlphabetOrRainbow(0, Phrase[i]);
       strip.show();
       if (millis() - t3 >= LettDelay) {
