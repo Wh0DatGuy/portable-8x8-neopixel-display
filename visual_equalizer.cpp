@@ -15,13 +15,13 @@
 #define B_3 8
 //delay values
 #define InitSensy 630
-#define SwDelay 300
 #define LettDelay 1000
 #define LettOffDelay 500
 //constant variables
 #define EqAnBars 7
 #define VOres 8
 //global variables
+unsigned int SwDelay = 300;
 int bandValues[EqAnBars], oBandValues, bandNo;
 byte j;
 byte MenuMode = 0, DisplayMode = 0;
@@ -35,37 +35,49 @@ byte LettNumb = 0, MenuLett;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(64, WS2812_PIN, NEO_GRB + NEO_KHZ800);
 Battery battery(3400, 4000, BattRead);
 //cycle trough colours to create rainbow effect
-void increasej() {
+void increasej()
+{
   static long t0;
-  if ((millis() - t0) >= Speedy) {
-    if (j < 256) {
+  if ((millis() - t0) >= Speedy)
+  {
+    if (j < 256)
+    {
       if (Direction == 1)
         j++;
       else
         j--;
-    } else
+    }
+    else
       j = 0;
     t0 = millis();
   }
 }
 //generates a color based on a 255 value
-uint32_t Wheel(byte WheelPos) {
-  if (WheelPos < 85) {
+uint32_t Wheel(byte WheelPos)
+{
+  if (WheelPos < 85)
+  {
     return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
-  } else if (WheelPos < 170) {
+  }
+  else if (WheelPos < 170)
+  {
     WheelPos -= 85;
     return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
-  } else {
+  }
+  else
+  {
     WheelPos -= 170;
     return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
   }
 }
 //read MSGEQ7 and store in an array
-void readMSGEQ7() {
+void readMSGEQ7()
+{
   digitalWrite(RESET_PIN, HIGH);
   digitalWrite(RESET_PIN, LOW);
 
-  for (bandNo = 0; bandNo < EqAnBars; bandNo++) {
+  for (bandNo = 0; bandNo < EqAnBars; bandNo++)
+  {
     digitalWrite(STROBE_PIN, LOW);
     delayMicroseconds(30);
     bandValues[bandNo] = analogRead(ANALOG_PIN);
@@ -80,12 +92,16 @@ void readMSGEQ7() {
     oBandValues = Sensy; //always fit bars on 8 pixels
 }
 //visual equalizer
-void VisualEq() {
+void VisualEq()
+{
   readMSGEQ7();
-  for (bandNo = 0; bandNo < EqAnBars; bandNo++) {
+  for (bandNo = 0; bandNo < EqAnBars; bandNo++)
+  {
     byte toY = map(bandValues[bandNo], 30, oBandValues, 0, VOres);
-    for (byte y = 0; y < toY; y++) {
-      switch (DisplayMode) {
+    for (byte y = 0; y < toY; y++)
+    {
+      switch (DisplayMode)
+      {
       case 0 /*vertical bars*/:
         fMode = (bandNo * VOres) + y;
         break;
@@ -98,14 +114,18 @@ void VisualEq() {
   }
 }
 //Calculate and display battery level
-void BattLevel() {
+void BattLevel()
+{
   static byte BattToPixel;
-  if (millis() - t5 >= 1000) {
+  if ((millis() - t5) >= 1000)
+  {
     BattToPixel = map(battery.level(), 0, 100, 0, VOres);
     t5 = millis();
   }
-  for (byte i = 0; i < BattToPixel; i++) {
-    switch (DisplayMode) {
+  for (byte i = 0; i < BattToPixel; i++)
+  {
+    switch (DisplayMode)
+    {
     case 0 /*vertical*/:
       fMode = i + VOres * EqAnBars;
       break;
@@ -117,10 +137,14 @@ void BattLevel() {
   }
 }
 //display letters or full screen rainbow effect
-void DAlphabetOrRainbow(byte DMode, byte SLettNumber = 0) {
-  for (byte h = 0; h < VOres; h++) {
-    for (byte l = 0; l < VOres; l++) {
-      switch (DisplayMode) {
+void DispAlphabetOrRainbow(byte DMode, byte SLettNumber = 0)
+{
+  for (byte h = 0; h < VOres; h++)
+  {
+    for (byte l = 0; l < VOres; l++)
+    {
+      switch (DisplayMode)
+      {
       case 0 /*vertical*/:
         fMode = (h * VOres) + l;
         break;
@@ -129,7 +153,8 @@ void DAlphabetOrRainbow(byte DMode, byte SLettNumber = 0) {
         break;
       }
       bool DVal;
-      switch (DMode) {
+      switch (DMode)
+      {
       case 0:
         DVal = (pgm_read_byte(&LettNumber[SLettNumber][(VOres - 1) - l][h]));
         break;
@@ -142,35 +167,43 @@ void DAlphabetOrRainbow(byte DMode, byte SLettNumber = 0) {
   }
 }
 //clear display for DelayVal seconds
-void ClearWithDelay(int DelayVal) {
+void ClearWithDelay(int DelayVal)
+{
   strip.clear();
   strip.show();
   delay(DelayVal);
 }
 //letter menu to compose phrases
-void LettMenu() {
+void LettMenu()
+{
   static bool MemEn = false;
   static byte k, Phrase[32];
   static long t2, t3;
-  if (digitalRead(B_1) || digitalRead(B_3)) {
+  if (digitalRead(B_1) || digitalRead(B_3))
+  {
     t2 = millis();
     MemEn = true;
-  } else if ((millis() - t2 >= LettDelay) && MemEn) {
+  }
+  else if (((millis() - t2) >= LettDelay) && MemEn)
+  {
     ClearWithDelay(LettOffDelay);
     Phrase[k] = LettNumb;
     k++;
     MemEn = false;
   }
-  if (digitalRead(B_1) && digitalRead(B_3)) {
+  if (digitalRead(B_1) && digitalRead(B_3))
+  {
     byte i = 0;
     ClearWithDelay(LettOffDelay);
     t3 = millis();
-    while (i < k) {
+    while (i < k)
+    {
       strip.clear();
       increasej();
-      DAlphabetOrRainbow(0, Phrase[i]);
+      DispAlphabetOrRainbow(0, Phrase[i]);
       strip.show();
-      if (millis() - t3 >= LettDelay) {
+      if (millis() - t3 >= LettDelay)
+      {
         ClearWithDelay(10);
         i++;
         t3 = millis();
@@ -180,11 +213,13 @@ void LettMenu() {
     MemEn = false;
     ClearWithDelay(LettOffDelay);
   }
-  DAlphabetOrRainbow(0, LettNumb);
+  DispAlphabetOrRainbow(0, LettNumb);
 }
 //displays associated letter when menu is changed
-void MenuLettSel() {
-  switch (MenuMode) {
+void MenuLettSel()
+{
+  switch (MenuMode)
+  {
   case 0 /*brightness*/:
     MenuLett = 1; //B
     break;
@@ -204,14 +239,18 @@ void MenuLettSel() {
     MenuLett = 18; //S
     break;
   }
-  DAlphabetOrRainbow(0, MenuLett);
+  DispAlphabetOrRainbow(0, MenuLett);
 }
 //increase or decrease to 0 given value using 2 buttons
-int IncrDecr(int MaxVal, int Val, byte Step) {
-  if (digitalRead(B_3)) {
+int IncrDecr(int MaxVal, int Val, byte Step)
+{
+  if (digitalRead(B_3))
+  {
     Val += Step;
     t1 = millis();
-  } else if (digitalRead(B_1)) {
+  }
+  else if (digitalRead(B_1))
+  {
     Val -= Step;
     t1 = millis();
   }
@@ -222,17 +261,33 @@ int IncrDecr(int MaxVal, int Val, byte Step) {
   return Val;
 }
 //change selected menu using B2
-void Menu() {
-  if (millis() - t1 >= SwDelay) {
-    if (digitalRead(B_2)) {
+void Menu()
+{
+  if ((!digitalRead(B_1)) && (!digitalRead(B_2)) && (!digitalRead(B_3)))
+  {
+    SwDelay = 300;
+    t1 = millis() + SwDelay;
+  }
+  else if ((millis() - t1) >= SwDelay)
+  {
+    SwDelay -= 25;
+    if (SwDelay <= 90)
+    {
+      SwDelay = 100;
+    }
+    if (digitalRead(B_2))
+    {
       t1 = millis();
       t4 = millis();
       if (MenuMode < 5)
         MenuMode++;
       else
         MenuMode = 0;
-    } else if (!fMenuLabel) {
-      switch (MenuMode) {
+    }
+    else if (!fMenuLabel)
+    {
+      switch (MenuMode)
+      {
       case 0 /*brightness*/:
         Brighty = IncrDecr(255, Brighty, 15);
         if (Brighty == 0)
@@ -253,19 +308,23 @@ void Menu() {
         break;
       case 5 /*speed*/:
         Speedy = IncrDecr(10, Speedy, 1);
+        if (Speedy < 4)
+          Speedy = 4;
         break;
       }
     }
-  } else if ((!digitalRead(B_1)) && (!digitalRead(B_2)) && (!digitalRead(B_3)))
-    t1 = millis() + SwDelay;
-
-  if (((millis() - t4) <= LettDelay)) {
+  }
+  if (((millis() - t4) <= LettDelay))
+  {
     fMenuLabel = true;
     MenuLettSel();
-  } else fMenuLabel = false;
+  }
+  else
+    fMenuLabel = false;
 }
 //main program
-void setup() {
+void setup()
+{
   strip.begin();
   strip.show();
   battery.begin(5000, 1.0);
@@ -279,18 +338,22 @@ void setup() {
   strip.setBrightness(Brighty);
 }
 
-void loop() {
+void loop()
+{
   strip.clear();
   increasej();
 
   Menu();
 
-  if (digitalRead(B_2) || fMenuLabel) {
-  } else if (MenuMode == 3)
+  if (digitalRead(B_2) || fMenuLabel)
+  {
+  }
+  else if (MenuMode == 3)
     LettMenu();
   else if ((MenuMode == 4) || (MenuMode == 5))
-    DAlphabetOrRainbow(1);
-  else {
+    DispAlphabetOrRainbow(1);
+  else
+  {
     //if(digitalRead(BATTVS)) //remove "//" when circuit upgraded
     VisualEq();
     BattLevel();
