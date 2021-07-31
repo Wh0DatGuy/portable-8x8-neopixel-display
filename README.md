@@ -4,12 +4,12 @@ This is a visual equalizer that uses an 8x8 neopixel grid to display 7 audio ban
 Inside is an arduino uno with a custom shield, powered by a 18650 battery, with charge and converter board.
 Using the buttons on the side it is capable of:
 
-setting thebrightness of the display
-setting the sensitivity of the chip
-setting the orientation of the display
-writing phrases using the phrase composer menu
-setting the direction of the rainbow effect
-setting the speed of the rainbow effect
+- setting thebrightness of the display
+- setting the sensitivity of the chip
+- setting the orientation of the display
+- writing phrases using the phrase composer menu
+- setting the direction of the rainbow effect
+- setting the speed of the rainbow effect
 
 libraries used:
 - neopixel: https://github.com/adafruit/Adafruit_NeoPixel
