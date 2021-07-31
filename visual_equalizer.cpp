@@ -17,17 +17,17 @@
 #define InitSensy 630
 #define LettDelay 1000
 #define LettOffDelay 500
+unsigned int SwDelay = 300;
 //constant variables
 #define EqAnBars 7
 #define VOres 8
 //global variables
-unsigned int SwDelay = 300;
 int bandValues[EqAnBars], oBandValues, bandNo;
 byte j;
 byte MenuMode = 0, DisplayMode = 0;
 int Sensy;
 byte Brighty, Speedy = 8;
-bool Direction = 0, fMenuLabel;
+bool Direction = 0, fMenuLabel, MemEn = false;
 byte fMode;
 long t1, t4, t5;
 byte LettNumb = 0, MenuLett;
@@ -149,9 +149,9 @@ void ClearWithDelay(int DelayVal) {
 }
 //letter menu to compose phrases
 void LettMenu() {
-  static bool MemEn = false;
   static byte k, Phrase[32];
   static long t2, t3;
+  static bool fStop;
   if (digitalRead(B_1) || digitalRead(B_3)) {
     t2 = millis();
     MemEn = true;
@@ -162,18 +162,28 @@ void LettMenu() {
     MemEn = false;
   }
   if (digitalRead(B_1) && digitalRead(B_3)) {
-    byte i = 0;
+    byte i;
     ClearWithDelay(LettOffDelay);
+    fStop = false;
+    i = 0;
     t3 = millis();
-    while (i < k) {
+    while (!fStop) {
       strip.clear();
       increasej();
       DispAlphabetOrRainbow(0, Phrase[i]);
       strip.show();
       if (millis() - t3 >= LettDelay) {
         ClearWithDelay(10);
-        i++;
+        if (i < (k - 1)) {
+          i++;
+        } else {
+          i = 0;
+          ClearWithDelay(LettDelay);
+        }
         t3 = millis();
+      }
+      if (digitalRead(B_2)) {
+        fStop = true;
       }
     }
     k = 0;
@@ -182,7 +192,22 @@ void LettMenu() {
   }
   DispAlphabetOrRainbow(0, LettNumb);
 }
-//displays associated letter when menu is changed
+//increase or decrease to 0 given value using B1 and B3
+int IncrDecr(int MaxVal, int Val, byte Step) {
+  if (digitalRead(B_3)) {
+    Val += Step;
+    t1 = millis();
+  } else if (digitalRead(B_1)) {
+    Val -= Step;
+    t1 = millis();
+  }
+  if (Val > MaxVal)
+    Val = MaxVal;
+  else if (Val < Step)
+    Val = 0;
+  return Val;
+}
+//display menu letter when selected
 void MenuLettSel() {
   switch (MenuMode) {
   case 0 /*brightness*/:
@@ -206,20 +231,33 @@ void MenuLettSel() {
   }
   DispAlphabetOrRainbow(0, MenuLett);
 }
-//increase or decrease to 0 given value using 2 buttons
-int IncrDecr(int MaxVal, int Val, byte Step) {
-  if (digitalRead(B_3)) {
-    Val += Step;
-    t1 = millis();
-  } else if (digitalRead(B_1)) {
-    Val -= Step;
-    t1 = millis();
+//modify values of said menu
+void SettChange() {
+  switch (MenuMode) {
+  case 0 /*brightness*/:
+    Brighty = IncrDecr(255, Brighty, 15);
+    if (Brighty == 0)
+      Brighty = 15;
+    strip.setBrightness(Brighty);
+    break;
+  case 1 /*volume*/:
+    Sensy = IncrDecr(InitSensy, Sensy, 90);
+    break;
+  case 2 /*orientation*/:
+    DisplayMode = IncrDecr(1, DisplayMode, 1);
+    break;
+  case 3 /*writing mode*/:
+    LettNumb = IncrDecr(26, LettNumb, 1);
+    break;
+  case 4 /*direction*/:
+    Direction = IncrDecr(1, Direction, 1);
+    break;
+  case 5 /*speed*/:
+    Speedy = IncrDecr(10, Speedy, 1);
+    if (Speedy < 4)
+      Speedy = 4;
+    break;
   }
-  if (Val > MaxVal)
-    Val = MaxVal;
-  else if (Val < Step)
-    Val = 0;
-  return Val;
 }
 //change selected menu using B2
 void Menu() {
@@ -238,33 +276,8 @@ void Menu() {
         MenuMode++;
       else
         MenuMode = 0;
-    } else if (!fMenuLabel) {
-      switch (MenuMode) {
-      case 0 /*brightness*/:
-        Brighty = IncrDecr(255, Brighty, 15);
-        if (Brighty == 0)
-          Brighty = 15;
-        strip.setBrightness(Brighty);
-        break;
-      case 1 /*volume*/:
-        Sensy = IncrDecr(InitSensy, Sensy, 90);
-        break;
-      case 2 /*orientation*/:
-        DisplayMode = IncrDecr(1, DisplayMode, 1);
-        break;
-      case 3 /*writing mode*/:
-        LettNumb = IncrDecr(26, LettNumb, 1);
-        break;
-      case 4 /*direction*/:
-        Direction = IncrDecr(1, Direction, 1);
-        break;
-      case 5 /*speed*/:
-        Speedy = IncrDecr(10, Speedy, 1);
-        if (Speedy < 4)
-          Speedy = 4;
-        break;
-      }
-    }
+    } else if (!fMenuLabel)
+      SettChange();
   }
   if (((millis() - t4) <= LettDelay)) {
     fMenuLabel = true;
@@ -294,14 +307,20 @@ void loop() {
   Menu();
 
   if (digitalRead(B_2) || fMenuLabel) {
-  } else if (MenuMode == 3)
-    LettMenu();
-  else if ((MenuMode == 4) || (MenuMode == 5))
-    DispAlphabetOrRainbow(1);
-  else {
+    MemEn = false; //if exit letter menu reset letter timer
+  } else switch (MenuMode) {
+  default:
     //if(digitalRead(BATTVS)) //remove "//" when circuit upgraded
     VisualEq();
     BattLevel();
+    break;
+  case 3:
+    LettMenu();
+    break;
+  case 4:
+  case 5:
+    DispAlphabetOrRainbow(1);
+    break;
   }
   strip.show();
 }
