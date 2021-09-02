@@ -149,6 +149,7 @@ void DispAlphabetOrRainbow(byte DMode, byte SLettNumber = 0, int NxSLettNumber =
     }
   }
 }
+//view display as horizzontal or vertical
 void VerticalOrHorizontal() {
   for (byte h = 0; h < VOres; h++) {
     for (byte l = 0; l < VOres; l++) {
