@@ -15,7 +15,7 @@
 #define B_3 8
 //delay values
 #define InitSensy 630
-#define LettDelay 1000
+#define LettDelay 1600
 #define LettOffDelay 500
 unsigned int SwDelay = 300;
 //constant variables
@@ -29,8 +29,9 @@ int Sensy;
 byte Brighty, Speedy = 8;
 bool Direction = 0, fMenuLabel, MemEn = false;
 byte fMode;
-long t1, t4, t5;
+long t1, t5, t6 = 0;
 byte LettNumb = 0, MenuLett;
+int aMaxLettNumber = 0;
 //library initializations
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(64, WS2812_PIN, NEO_GRB + NEO_KHZ800);
 Battery battery(3400, 4000, BattRead);
@@ -60,6 +61,7 @@ uint32_t Wheel(byte WheelPos) {
     return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
   }
 }
+bool DispBuffer[8][8];
 //read MSGEQ7 and store in an array
 void readMSGEQ7() {
   digitalWrite(RESET_PIN, HIGH);
@@ -84,16 +86,12 @@ void VisualEq() {
   readMSGEQ7();
   for (bandNo = 0; bandNo < EqAnBars; bandNo++) {
     byte toY = map(bandValues[bandNo], 30, oBandValues, 0, VOres);
-    for (byte y = 0; y < toY; y++) {
-      switch (DisplayMode) {
-      case 0 /*vertical bars*/:
-        fMode = (bandNo * VOres) + y;
-        break;
-      case 1 /*hotizontal bars*/:
-        fMode = (y * VOres) + ((VOres - 1) - bandNo);
-        break;
+    for (byte y = 0; y < 8; y++) {
+      if (y < toY) {
+        DispBuffer[bandNo][y] = 1;
+      } else {
+        DispBuffer[bandNo][y] = 0;
       }
-      strip.setPixelColor(fMode, Wheel(((bandNo * VOres) + y) + j));
     }
   }
 }
@@ -104,20 +102,54 @@ void BattLevel() {
     BattToPixel = map(battery.level(), 0, 100, 0, VOres);
     t5 = millis();
   }
-  for (byte i = 0; i < BattToPixel; i++) {
-    switch (DisplayMode) {
-    case 0 /*vertical*/:
-      fMode = i + VOres * EqAnBars;
-      break;
-    case 1 /*horizontal*/:
-      fMode = i * VOres;
-      break;
+  for (byte i = 0; i < 8; i++) {
+    if (i < BattToPixel) {
+      DispBuffer[7][i] = 1;
+    } else {
+      DispBuffer[7][i] = 0;
     }
-    strip.setPixelColor(fMode, Wheel((VOres * EqAnBars) + i + j));
   }
 }
 //display letters or full screen rainbow effect
-void DispAlphabetOrRainbow(byte DMode, byte SLettNumber = 0) {
+void DispAlphabetOrRainbow(byte DMode, byte SLettNumber = 0, int NxSLettNumber = 0, int MaxLettNumber = 1) {
+  static int k = 0, oaMaxLettNumber;
+  if ((aMaxLettNumber != oaMaxLettNumber)) {
+    k = 0;
+    oaMaxLettNumber = aMaxLettNumber;
+    t6 = millis();
+  }
+  if (aMaxLettNumber < (MaxLettNumber - 1)) {
+    if (millis() - t6 >= (LettDelay / (VOres + 1))) {
+      if (k < (VOres)) {
+        k++;
+      }
+      t6 = millis();
+    }
+  }
+  for (byte h = 0; h < VOres; h++) {
+    for (byte l = 0; l < VOres; l++) {
+      bool DVal;
+      switch (DMode) {
+      case 0:
+        DVal = (pgm_read_byte(&LettNumber[SLettNumber][(VOres - 1) - l][h]));
+        break;
+      case 1:
+        DVal = 1;
+        break;
+      case 2:
+        if (h < (VOres - k)) {
+          DVal = (pgm_read_byte(&LettNumber[SLettNumber][(VOres - 1) - l][h + k]));
+        } else {
+          DVal = (pgm_read_byte(&LettNumber[NxSLettNumber][(VOres - 1) - l][h - (VOres - (k - 1))]));
+        }
+        break;
+      }
+      DispBuffer[h][l] = DVal;
+      DispBuffer[(VOres - k)][l] = 0;
+    }
+  }
+}
+void VerticalOrHorizontal() {
   for (byte h = 0; h < VOres; h++) {
     for (byte l = 0; l < VOres; l++) {
       switch (DisplayMode) {
@@ -129,17 +161,11 @@ void DispAlphabetOrRainbow(byte DMode, byte SLettNumber = 0) {
         break;
       }
       bool DVal;
-      switch (DMode) {
-      case 0:
-        DVal = (pgm_read_byte(&LettNumber[SLettNumber][(VOres - 1) - l][h]));
-        break;
-      case 1:
-        DVal = 1;
-        break;
-      }
+      DVal = DispBuffer[h][l];
       strip.setPixelColor(fMode, (Wheel(((h * VOres) + l) + j) * DVal));
     }
   }
+
 }
 //clear display for DelayVal seconds
 void ClearWithDelay(int DelayVal) {
@@ -167,18 +193,22 @@ void LettMenu() {
     fStop = false;
     i = 0;
     t3 = millis();
+    t6 = millis();
     while (!fStop) {
       strip.clear();
       increasej();
-      DispAlphabetOrRainbow(0, Phrase[i]);
+      DispAlphabetOrRainbow(2, Phrase[i], Phrase[i + 1], k);
+      VerticalOrHorizontal();
       strip.show();
       if (millis() - t3 >= LettDelay) {
-        ClearWithDelay(10);
         if (i < (k - 1)) {
+          aMaxLettNumber++;
           i++;
         } else {
           i = 0;
           ClearWithDelay(LettDelay);
+          aMaxLettNumber = 0;
+          t6 = millis();
         }
         t3 = millis();
       }
@@ -186,6 +216,7 @@ void LettMenu() {
         fStop = true;
       }
     }
+    aMaxLettNumber = 0;
     k = 0;
     MemEn = false;
     ClearWithDelay(LettOffDelay);
@@ -261,6 +292,7 @@ void SettChange() {
 }
 //change selected menu using B2
 void Menu() {
+  static long t4;
   if ((!digitalRead(B_1)) && (!digitalRead(B_2)) && (!digitalRead(B_3))) {
     SwDelay = 300;
     t1 = millis() + SwDelay;
@@ -322,5 +354,8 @@ void loop() {
     DispAlphabetOrRainbow(1);
     break;
   }
+
+  VerticalOrHorizontal();
+
   strip.show();
 }
