@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
-#include <Battery.h>
 #include <letters.h>
 //pins
 #define STROBE_PIN 4
@@ -34,7 +33,6 @@ byte LettNumb = 0, MenuLett;
 int aMaxLettNumber = 0;
 //library initializations
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(64, WS2812_PIN, NEO_GRB + NEO_KHZ800);
-Battery battery(3400, 4000, BattRead);
 //cycle trough colours to create rainbow effect
 void increasej() {
   static long t0;
@@ -97,22 +95,22 @@ void VisualEq() {
 }
 //Calculate and display battery level
 void BattLevel() {
-  static byte BattToPixel;
   if ((millis() - t5) >= 1000) {
-    BattToPixel = map(battery.level(), 0, 100, 0, VOres);
-    t5 = millis();
-  }
-  for (byte i = 0; i < 8; i++) {
-    if (i < BattToPixel) {
-      DispBuffer[7][i] = 1;
-    } else {
-      DispBuffer[7][i] = 0;
+    float BattVolt = analogRead(BattRead) * (5.0 / 1023.0);
+    byte BattToPixel = BattVolt * (8 / 4.2);
+    for (byte i = 0; i < VOres; i++) {
+      if (i < BattToPixel) {
+        DispBuffer[7][i] = 1;
+      } else {
+        DispBuffer[7][i] = 0;
+      }
     }
+    t5 = millis();
   }
 }
 //display letters or full screen rainbow effect
-void DispAlphabetOrRainbow(byte DMode, byte SLettNumber = 0, int NxSLettNumber = 0, int MaxLettNumber = 1) {
-  static int k = 0, oaMaxLettNumber;
+void DispAlphabetOrRainbow(byte DMode, byte SLettNumber = 0, byte NxSLettNumber = 0, byte MaxLettNumber = 1) {
+  static byte k = 0, oaMaxLettNumber;
   if ((aMaxLettNumber != oaMaxLettNumber)) {
     k = 0;
     oaMaxLettNumber = aMaxLettNumber;
@@ -322,7 +320,6 @@ void Menu() {
 void setup() {
   strip.begin();
   strip.show();
-  battery.begin(5000, 1.0);
   oBandValues = InitSensy;
   Sensy = InitSensy;
   Brighty = map(analogRead(PHOTOR), 0, 700, 15, 255);
