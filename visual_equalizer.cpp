@@ -26,11 +26,12 @@ byte j;
 byte MenuMode = 0, DisplayMode = 0;
 int Sensy;
 byte Brighty, Speedy = 8;
-bool Direction = 0, fMenuLabel, MemEn = false;
+bool Direction = 0, fMenuLabel, LettMemEn = false;
 byte fMode;
-long t1, t5;
+long t1;
 byte LettNumb = 0, MenuLett;
 bool fLettMenuReset = false;
+bool DispBuffer[VOres + 1][VOres];
 //library initializations
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(64, WS2812_PIN, NEO_GRB + NEO_KHZ800);
 //cycle trough colours to create rainbow effect
@@ -59,7 +60,6 @@ uint32_t Wheel(byte WheelPos) {
     return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
   }
 }
-bool DispBuffer[VOres + 1][VOres];
 //read MSGEQ7 and store in an array
 void readMSGEQ7() {
   digitalWrite(RESET_PIN, HIGH);
@@ -95,6 +95,7 @@ void VisualEq() {
 }
 //Calculate and display battery level
 void BattLevel() {
+  static long t5;
   if ((millis() - t5) >= 1000) {
     float BattVolt = analogRead(BattRead) * (5.0 / 1023.0);
     byte BattToPixel = BattVolt * (VOres / 4);
@@ -108,7 +109,7 @@ void BattLevel() {
     t5 = millis();
   }
 }
-//display letters or full screen rainbow effect
+//display  full screen rainbow effect
 void DispRainbow() {
   for (byte l = 0; l < VOres; l++) {
     for (byte h = 0; h < VOres; h++) {
@@ -116,6 +117,7 @@ void DispRainbow() {
     }
   }
 }
+//display letters
 void DispAlphabet(byte DMode, byte SLettNumber = 0, byte NxSLettNumber = 0, byte CurLettNumb = 0, byte MaxLettNumb = 1) {
   static byte offset = 0, oCurLettNumb = 28;
   static long t6 = 0;
@@ -128,7 +130,6 @@ void DispAlphabet(byte DMode, byte SLettNumber = 0, byte NxSLettNumber = 0, byte
         DispBuffer[l][h] = DVal;
         break;
       case 1:
-        ///////////////////////////////////
         if (CurLettNumb != oCurLettNumb) {
           offset = 0;
           oCurLettNumb = CurLettNumb;
@@ -142,7 +143,6 @@ void DispAlphabet(byte DMode, byte SLettNumber = 0, byte NxSLettNumber = 0, byte
             t6 = millis();
           }
         }
-        /////////////////////////////////
         if (l < (VOres - offset)) {
           DVal = (pgm_read_byte(&LettNumber[SLettNumber][(VOres - 1) - h][l + offset]));
         } else {
@@ -195,8 +195,8 @@ void LettMenu() {
   if (LettSel) {
     if (digitalRead(B_1) || digitalRead(B_3)) {
       t2 = millis();
-      MemEn = true;
-    } else if (((millis() - t2) >= LettDelay) && MemEn) {
+      LettMemEn = true;
+    } else if (((millis() - t2) >= LettDelay) && LettMemEn) {
       ClearWithDelay(LettOffDelay);
       if (fkReset) {
         PhraseL = 0;
@@ -204,7 +204,7 @@ void LettMenu() {
       }
       Phrase[PhraseL] = LettNumb;
       PhraseL++;
-      MemEn = false;
+      LettMemEn = false;
     }
     if (digitalRead(B_1) && digitalRead(B_3)) {
       ClearWithDelay(LettOffDelay);
@@ -342,7 +342,7 @@ void loop() {
   Menu();
 
   if (digitalRead(B_2) || fMenuLabel) {
-    MemEn = false; //if exit letter menu reset letter timer
+    LettMemEn = false; //if exit letter menu reset letter timer
   } else switch (MenuMode) {
   default:
     //if(digitalRead(BATTVS)) //remove "//" when circuit upgraded
