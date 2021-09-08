@@ -28,9 +28,9 @@ int Sensy;
 byte Brighty, Speedy = 8;
 bool Direction = 0, fMenuLabel, MemEn = false;
 byte fMode;
-long t1, t5, t6 = 0;
+long t1, t5;
 byte LettNumb = 0, MenuLett;
-int aMaxLettNumber = 0;
+bool fLettMenuReset = false;
 //library initializations
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(64, WS2812_PIN, NEO_GRB + NEO_KHZ800);
 //cycle trough colours to create rainbow effect
@@ -59,7 +59,7 @@ uint32_t Wheel(byte WheelPos) {
     return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
   }
 }
-bool DispBuffer[8][8];
+bool DispBuffer[VOres + 1][VOres];
 //read MSGEQ7 and store in an array
 void readMSGEQ7() {
   digitalWrite(RESET_PIN, HIGH);
@@ -75,20 +75,20 @@ void readMSGEQ7() {
       oBandValues = bandValues[bandNo];
   }
   if (oBandValues >= Sensy)
-    oBandValues--;
+    oBandValues--;//always fit bars on 8 pixels
   else if (Sensy == InitSensy)
-    oBandValues = Sensy; //always fit bars on 8 pixels
+    oBandValues = Sensy;
 }
 //visual equalizer
 void VisualEq() {
   readMSGEQ7();
   for (bandNo = 0; bandNo < EqAnBars; bandNo++) {
     byte toY = map(bandValues[bandNo], 30, oBandValues, 0, VOres);
-    for (byte y = 0; y < 8; y++) {
-      if (y < toY) {
-        DispBuffer[bandNo][y] = 1;
+    for (byte h = 0; h < VOres; h++) {
+      if (h < toY) {
+        DispBuffer[bandNo][h] = 1;
       } else {
-        DispBuffer[bandNo][y] = 0;
+        DispBuffer[bandNo][h] = 0;
       }
     }
   }
@@ -97,71 +97,79 @@ void VisualEq() {
 void BattLevel() {
   if ((millis() - t5) >= 1000) {
     float BattVolt = analogRead(BattRead) * (5.0 / 1023.0);
-    byte BattToPixel = BattVolt * (8 / 4.2);
-    for (byte i = 0; i < VOres; i++) {
-      if (i < BattToPixel) {
-        DispBuffer[7][i] = 1;
+    byte BattToPixel = BattVolt * (VOres / 4);
+    for (byte h = 0; h < VOres; h++) {
+      if (h < BattToPixel) {
+        DispBuffer[VOres - 1][h] = 1;
       } else {
-        DispBuffer[7][i] = 0;
+        DispBuffer[VOres - 1][h] = 0;
       }
     }
     t5 = millis();
   }
 }
 //display letters or full screen rainbow effect
-void DispAlphabetOrRainbow(byte DMode, byte SLettNumber = 0, byte NxSLettNumber = 0, byte MaxLettNumber = 1) {
-  static byte k = 0, oaMaxLettNumber;
-  if ((aMaxLettNumber != oaMaxLettNumber)) {
-    k = 0;
-    oaMaxLettNumber = aMaxLettNumber;
-    t6 = millis();
-  }
-  if (aMaxLettNumber < (MaxLettNumber - 1)) {
-    if (millis() - t6 >= (LettDelay / (VOres + 1))) {
-      if (k < (VOres)) {
-        k++;
-      }
-      t6 = millis();
+void DispRainbow() {
+  for (byte l = 0; l < VOres; l++) {
+    for (byte h = 0; h < VOres; h++) {
+      DispBuffer[l][h] = 1;
     }
   }
-  for (byte h = 0; h < VOres; h++) {
-    for (byte l = 0; l < VOres; l++) {
+}
+void DispAlphabet(byte DMode, byte SLettNumber = 0, byte NxSLettNumber = 0, byte CurLettNumb = 0, byte MaxLettNumb = 1) {
+  static byte offset = 0, oCurLettNumb = 28;
+  static long t6 = 0;
+  for (byte l = 0; l < VOres; l++) {
+    for (byte h = 0; h < VOres; h++) {
       bool DVal;
       switch (DMode) {
       case 0:
-        DVal = (pgm_read_byte(&LettNumber[SLettNumber][(VOres - 1) - l][h]));
+        DVal = (pgm_read_byte(&LettNumber[SLettNumber][(VOres - 1) - h][l]));
+        DispBuffer[l][h] = DVal;
         break;
       case 1:
-        DVal = 1;
-        break;
-      case 2:
-        if (h < (VOres - k)) {
-          DVal = (pgm_read_byte(&LettNumber[SLettNumber][(VOres - 1) - l][h + k]));
-        } else {
-          DVal = (pgm_read_byte(&LettNumber[NxSLettNumber][(VOres - 1) - l][h - (VOres - (k - 1))]));
+        ///////////////////////////////////
+        if (CurLettNumb != oCurLettNumb) {
+          offset = 0;
+          oCurLettNumb = CurLettNumb;
+          t6 = millis();
         }
+        if (CurLettNumb < (MaxLettNumb - 1)) {
+          if ((millis() - t6) >= (LettDelay / (VOres + 1))) {
+            if (offset < VOres) {
+              offset++;
+            }
+            t6 = millis();
+          }
+        }
+        /////////////////////////////////
+        if (l < (VOres - offset)) {
+          DVal = (pgm_read_byte(&LettNumber[SLettNumber][(VOres - 1) - h][l + offset]));
+        } else {
+          DVal = (pgm_read_byte(&LettNumber[NxSLettNumber][(VOres - 1) - h][l - (VOres - (offset - 1))]));
+        }
+        DispBuffer[l][h] = DVal;
+        DispBuffer[VOres - offset][h] = 0;
         break;
       }
-      DispBuffer[h][l] = DVal;
-      DispBuffer[(VOres - k)][l] = 0;
     }
   }
 }
 //view display as horizzontal or vertical
 void VerticalOrHorizontal() {
-  for (byte h = 0; h < VOres; h++) {
-    for (byte l = 0; l < VOres; l++) {
+  for (byte l = 0; l < VOres; l++) {
+    for (byte h = 0; h < VOres; h++) {
       switch (DisplayMode) {
       case 0 /*vertical*/:
-        fMode = (h * VOres) + l;
+        fMode = (l * VOres) + h;
         break;
       case 1 /*horizontal*/:
-        fMode = (l * VOres) + ((VOres - 1) - h);
+        fMode = (h * VOres) + ((VOres - 1) - l);
         break;
       }
       bool DVal;
-      DVal = DispBuffer[h][l];
-      strip.setPixelColor(fMode, (Wheel(((h * VOres) + l) + j) * DVal));
+      DVal = DispBuffer[l][h];
+      strip.setPixelColor(fMode, (Wheel(((l * VOres) + h) + j) * DVal));
     }
   }
 
@@ -174,53 +182,49 @@ void ClearWithDelay(int DelayVal) {
 }
 //letter menu to compose phrases
 void LettMenu() {
-  static byte k, Phrase[32];
+  static int PhraseL, Phrase[32];
   static long t2, t3;
-  static bool fStop;
-  if (digitalRead(B_1) || digitalRead(B_3)) {
-    t2 = millis();
-    MemEn = true;
-  } else if (((millis() - t2) >= LettDelay) && MemEn) {
-    ClearWithDelay(LettOffDelay);
-    Phrase[k] = LettNumb;
-    k++;
-    MemEn = false;
+  static bool LettSel = true;
+  static byte i;
+  static bool fkReset = false;
+  if (fLettMenuReset) {
+    LettSel = true;
+    fkReset = true;
+    fLettMenuReset = false;
   }
-  if (digitalRead(B_1) && digitalRead(B_3)) {
-    byte i;
-    ClearWithDelay(LettOffDelay);
-    fStop = false;
-    i = 0;
-    t3 = millis();
-    t6 = millis();
-    while (!fStop) {
-      strip.clear();
-      increasej();
-      DispAlphabetOrRainbow(2, Phrase[i], Phrase[i + 1], k);
-      VerticalOrHorizontal();
-      strip.show();
-      if (millis() - t3 >= LettDelay) {
-        if (i < (k - 1)) {
-          aMaxLettNumber++;
-          i++;
-        } else {
-          i = 0;
-          ClearWithDelay(LettDelay);
-          aMaxLettNumber = 0;
-          t6 = millis();
-        }
-        t3 = millis();
+  if (LettSel) {
+    if (digitalRead(B_1) || digitalRead(B_3)) {
+      t2 = millis();
+      MemEn = true;
+    } else if (((millis() - t2) >= LettDelay) && MemEn) {
+      ClearWithDelay(LettOffDelay);
+      if (fkReset) {
+        PhraseL = 0;
+        fkReset = false;
       }
-      if (digitalRead(B_2)) {
-        fStop = true;
-      }
+      Phrase[PhraseL] = LettNumb;
+      PhraseL++;
+      MemEn = false;
     }
-    aMaxLettNumber = 0;
-    k = 0;
-    MemEn = false;
-    ClearWithDelay(LettOffDelay);
+    if (digitalRead(B_1) && digitalRead(B_3)) {
+      ClearWithDelay(LettOffDelay);
+      LettSel = false;
+      i = 0;
+      t3 = millis();
+    }
+    DispAlphabet(0, LettNumb);
+  } else {
+    if (millis() - t3 >= LettDelay) {
+      if (i < (PhraseL - 1)) {
+        i++;
+      } else {
+        i = 0;
+        ClearWithDelay(LettDelay);
+      }
+      t3 = millis();
+    }
+    DispAlphabet(1, Phrase[i], Phrase[i + 1], i, PhraseL);
   }
-  DispAlphabetOrRainbow(0, LettNumb);
 }
 //increase or decrease to 0 given value using B1 and B3
 int IncrDecr(int MaxVal, int Val, byte Step) {
@@ -259,7 +263,7 @@ void MenuLettSel() {
     MenuLett = 18; //S
     break;
   }
-  DispAlphabetOrRainbow(0, MenuLett);
+  DispAlphabet(0, MenuLett);
 }
 //modify values of said menu
 void SettChange() {
@@ -313,6 +317,7 @@ void Menu() {
   if (((millis() - t4) <= LettDelay)) {
     fMenuLabel = true;
     MenuLettSel();
+    fLettMenuReset = true;
   } else
     fMenuLabel = false;
 }
@@ -349,7 +354,7 @@ void loop() {
     break;
   case 4:
   case 5:
-    DispAlphabetOrRainbow(1);
+    DispRainbow();
     break;
   }
 
