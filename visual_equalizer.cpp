@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 #include <letters.h>
+#include <SoftwareSerial.h>
 //pins
 #define STROBE_PIN 4
 #define ANALOG_PIN A0
@@ -12,11 +13,16 @@
 #define B_1 10
 #define B_2 9
 #define B_3 8
+#define BT_TX_PIN 6
+#define BT_RX_PIN 5
 //delay values
 #define InitSensy 630
-#define LettDelay 1600
-#define LettOffDelay 500
-unsigned int SwDelay = 300;
+#define LettDelay 800
+#define LettOffDelay 200
+#define InitSwDelay 250
+#define MinSwDelay 90
+const int StepSwDelay = (InitSwDelay - MinSwDelay) / 8;
+unsigned int SwDelay = InitSwDelay;
 //constant variables
 #define EqAnBars 7
 #define VOres 8
@@ -26,13 +32,14 @@ byte j;
 byte MenuMode = 0, DisplayMode = 0;
 int Sensy;
 byte Brighty, Speedy = 8;
-bool Direction = 0, fMenuLabel, LettMemEn = false;
+bool Direction = 0, fMenuLabel, LettMemEn = false, LettSave = false, LettDis = false;
 byte fMode;
 long t1;
 byte LettNumb = 0, MenuLett;
 bool fLettMenuReset = false;
 bool DispBuffer[VOres + 1][VOres];
 //library initializations
+SoftwareSerial bt = SoftwareSerial(BT_RX_PIN, BT_TX_PIN);
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(64, WS2812_PIN, NEO_GRB + NEO_KHZ800);
 //cycle trough colours to create rainbow effect
 void increasej() {
@@ -84,29 +91,17 @@ void VisualEq() {
   readMSGEQ7();
   for (bandNo = 0; bandNo < EqAnBars; bandNo++) {
     byte toY = map(bandValues[bandNo], 30, oBandValues, 0, VOres);
-    for (byte h = 0; h < VOres; h++) {
-      if (h < toY) {
-        DispBuffer[bandNo][h] = 1;
-      } else {
-        DispBuffer[bandNo][h] = 0;
-      }
+    for (byte h = 0; h < toY; h++) {
+      DispBuffer[bandNo][h] = 1;
     }
   }
 }
 //Calculate and display battery level
 void BattLevel() {
-  static long t5;
-  if ((millis() - t5) >= 1000) {
-    float BattVolt = analogRead(BattRead) * (5.0 / 1023.0);
-    byte BattToPixel = BattVolt * (VOres / 4);
-    for (byte h = 0; h < VOres; h++) {
-      if (h < BattToPixel) {
-        DispBuffer[VOres - 1][h] = 1;
-      } else {
-        DispBuffer[VOres - 1][h] = 0;
-      }
-    }
-    t5 = millis();
+  float BattVolt = analogRead(BattRead) * (5.0 / 1023.0);
+  byte BattToPixel = BattVolt * (VOres / 4);
+  for (byte h = 0; h < BattToPixel; h++) {
+    DispBuffer[VOres - 1][h] = 1;
   }
 }
 //display  full screen rainbow effect
@@ -172,7 +167,14 @@ void VerticalOrHorizontal() {
       strip.setPixelColor(fMode, (Wheel(((l * VOres) + h) + j) * DVal));
     }
   }
+}
 
+void buffer_clear() {
+  for (byte l = 0; l < VOres; l++) {
+    for (byte h = 0; h < VOres; h++) {
+      DispBuffer[l][h] = false;
+    }
+  }
 }
 //clear display for DelayVal seconds
 void ClearWithDelay(int DelayVal) {
@@ -190,13 +192,14 @@ void LettMenu() {
   if (fLettMenuReset) {
     LettSel = true;
     fkReset = true;
+    LettDis = false;
     fLettMenuReset = false;
   }
   if (LettSel) {
     if (digitalRead(B_1) || digitalRead(B_3)) {
       t2 = millis();
       LettMemEn = true;
-    } else if (((millis() - t2) >= LettDelay) && LettMemEn) {
+    } else if ((((millis() - t2) >= LettDelay) && LettMemEn) || LettSave) {
       ClearWithDelay(LettOffDelay);
       if (fkReset) {
         PhraseL = 0;
@@ -205,8 +208,9 @@ void LettMenu() {
       Phrase[PhraseL] = LettNumb;
       PhraseL++;
       LettMemEn = false;
+      LettSave = false;
     }
-    if (digitalRead(B_1) && digitalRead(B_3)) {
+    if ((digitalRead(B_1) && digitalRead(B_3)) || LettDis) {
       ClearWithDelay(LettOffDelay);
       LettSel = false;
       i = 0;
@@ -297,12 +301,12 @@ void SettChange() {
 void Menu() {
   static long t4;
   if ((!digitalRead(B_1)) && (!digitalRead(B_2)) && (!digitalRead(B_3))) {
-    SwDelay = 300;
+    SwDelay = InitSwDelay;
     t1 = millis() + SwDelay;
   } else if ((millis() - t1) >= SwDelay) {
-    SwDelay -= 25;
-    if (SwDelay <= 90) {
-      SwDelay = 100;
+    SwDelay -= StepSwDelay;
+    if (SwDelay <= MinSwDelay) {
+      SwDelay = MinSwDelay;
     }
     if (digitalRead(B_2)) {
       t1 = millis();
@@ -317,19 +321,51 @@ void Menu() {
   if (((millis() - t4) <= LettDelay)) {
     fMenuLabel = true;
     MenuLettSel();
-    fLettMenuReset = true;
   } else
     fMenuLabel = false;
+}
+
+void bluetooth() {
+  if (bt.available()) {
+    char data_in = bt.read();  //Get next character 
+    if (data_in == 'O') {
+      DisplayMode = false;
+    } else if (data_in == 'o') {
+      DisplayMode = true;
+    } else if (data_in == 'd') {
+      Direction = true;
+    } else  if (data_in == 'D') {
+      Direction = false;
+    } else if (data_in == 'T') {
+      MenuMode = 3;
+      LettNumb = bt.parseInt();
+    } else if (data_in == 't') {
+      MenuMode = 0;
+    } else if (data_in == 's') {
+      LettSave = true;
+    } else if (data_in == 'b') {
+      LettDis = true;
+    } else if (data_in == 'B') {
+      Brighty = bt.parseInt();;
+      strip.setBrightness(Brighty);
+    } else  if (data_in == 'V') {
+      Sensy = bt.parseInt();
+    } else if (data_in == 'S') {
+      Speedy = bt.parseInt();
+    }
+  }
 }
 //main program
 void setup() {
   strip.begin();
+  bt.begin(9600);
   strip.show();
   oBandValues = InitSensy;
   Sensy = InitSensy;
   Brighty = map(analogRead(PHOTOR), 0, 700, 15, 255);
   pinMode(RESET_PIN, OUTPUT);
   pinMode(STROBE_PIN, OUTPUT);
+  pinMode(BT_TX_PIN, OUTPUT);
   digitalWrite(RESET_PIN, LOW);
   digitalWrite(STROBE_PIN, HIGH);
   strip.setBrightness(Brighty);
@@ -337,16 +373,20 @@ void setup() {
 
 void loop() {
   strip.clear();
+  buffer_clear();
   increasej();
 
   Menu();
+  bluetooth();
 
   if (digitalRead(B_2) || fMenuLabel) {
     LettMemEn = false; //if exit letter menu reset letter timer
   } else switch (MenuMode) {
   default:
-    //if(digitalRead(BATTVS)) //remove "//" when circuit upgraded
-    VisualEq();
+    fLettMenuReset = true;
+    if (digitalRead(BATTVS)) {//remove "//" when circuit upgraded
+      VisualEq();
+    }
     BattLevel();
     break;
   case 3:
