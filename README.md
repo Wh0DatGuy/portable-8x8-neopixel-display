@@ -21,6 +21,7 @@ link of 3d-printed enclosure: https://www.thingiverse.com/thing:4725156
 link of gerber files: https://oshwlab.com/Gaming_Dub/visual-eq
 
 links of all the components used:
+- HC-05 bluetooth module: https://www.amazon.it/gp/product/B0722MD4FY/ref=ppx_yo_dt_b_asin_title_o01_s00?ie=UTF8&psc=1
 - MSGEQ7 chip: https://www.sparkfun.com/products/10468
 - display: https://www.amazon.it/gp/product/B078HYP681/ref=ppx_yo_dt_b_asin_title_o00_s00?ie=UTF8&psc=1
 - boost converter: https://www.amazon.it/gp/product/B07PMRWRBX/ref=ppx_yo_dt_b_asin_image_o04_s00?ie=UTF8&psc=1
