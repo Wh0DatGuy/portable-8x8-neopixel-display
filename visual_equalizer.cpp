@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
 #include <letters.h>
-#include <SoftwareSerial.h>
 //pins
 #define STROBE_PIN 4
 #define ANALOG_PIN A0
@@ -39,7 +38,6 @@ byte LettNumb = 0, MenuLett;
 bool fLettMenuReset = false;
 bool DispBuffer[VOres + 1][VOres];
 //library initializations
-SoftwareSerial bt = SoftwareSerial(BT_RX_PIN, BT_TX_PIN);
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(64, WS2812_PIN, NEO_GRB + NEO_KHZ800);
 //cycle trough colours to create rainbow effect
 void increasej() {
@@ -184,7 +182,7 @@ void ClearWithDelay(int DelayVal) {
 }
 //letter menu to compose phrases
 void LettMenu() {
-  static int PhraseL, Phrase[32];
+  static int PhraseL, Phrase[20];
   static long t2, t3;
   static bool LettSel = true;
   static byte i;
@@ -319,6 +317,7 @@ void Menu() {
       SettChange();
   }
   if (((millis() - t4) <= LettDelay)) {
+    fLettMenuReset = true;
     fMenuLabel = true;
     MenuLettSel();
   } else
@@ -326,41 +325,55 @@ void Menu() {
 }
 
 void bluetooth() {
-  if (bt.available()) {
-    char data_in = bt.read();  //Get next character 
-    if (data_in == 'O') {
+  while (Serial.available() > 0) {
+    switch (Serial.read()) {
+    case 'x':
+      break;
+    case 'O':
       DisplayMode = false;
-    } else if (data_in == 'o') {
+      break;
+    case 'o':
       DisplayMode = true;
-    } else if (data_in == 'd') {
+      break;
+    case 'd':
       Direction = true;
-    } else  if (data_in == 'D') {
+      break;
+    case 'D':
       Direction = false;
-    } else if (data_in == 'T') {
+      break;
+    case 'T':
       MenuMode = 3;
-      LettNumb = bt.parseInt();
-    } else if (data_in == 'M') {
-      LettNumb = bt.parseInt();
-    } else if (data_in == 't') {
+      break;
+    case 'M':
+      LettNumb = Serial.parseInt();
+      break;
+    case 't':
       MenuMode = 0;
-    } else if (data_in == 's') {
+      break;
+    case 's':
       LettSave = true;
-    } else if (data_in == 'b') {
+      break;
+    case 'b':
       LettDis = true;
-    } else if (data_in == 'B') {
-      Brighty = bt.parseInt();;
+      break;
+    case 'B':
+      MenuMode = 0;
+      Brighty = (Serial.parseInt() * 15);
       strip.setBrightness(Brighty);
-    } else  if (data_in == 'V') {
-      Sensy = bt.parseInt();
-    } else if (data_in == 'S') {
-      Speedy = bt.parseInt();
+      break;
+    case 'V':
+      Sensy = (Serial.parseInt() * 90);
+      break;
+    case 'S':
+      Speedy = Serial.parseInt();
+      break;
     }
   }
 }
 //main program
 void setup() {
   strip.begin();
-  bt.begin(9600);
+  Serial.begin(9600);
   strip.show();
   oBandValues = InitSensy;
   Sensy = InitSensy;
