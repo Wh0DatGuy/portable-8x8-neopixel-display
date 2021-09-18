@@ -339,6 +339,8 @@ void bluetooth() {
     } else if (data_in == 'T') {
       MenuMode = 3;
       LettNumb = bt.parseInt();
+    } else if (data_in == 'M') {
+      LettNumb = bt.parseInt();
     } else if (data_in == 't') {
       MenuMode = 0;
     } else if (data_in == 's') {
