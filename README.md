@@ -1,4 +1,3 @@
-bluetooth app: https://play.google.com/store/apps/details?id=com.keuwl.arduinobluetooth (download then import .kwl file)
 # portable-8x8-neopixel-display
 The pictures on thingiverse are of a prototype, so there's components soldered around. The new boards are already updated to include those components.
 This is a visual equalizer that uses an 8x8 neopixel grid to display 7 audio bands (using the MSGEQ7 chip from sparkfun) while the last column is used to display the battery level.
@@ -14,11 +13,12 @@ Using the buttons on the side it is capable of:
 
 libraries used:
 - neopixel: https://github.com/adafruit/Adafruit_NeoPixel
-- battery: https://github.com/rlogiacco/BatterySense
 
 link of 3d-printed enclosure: https://www.thingiverse.com/thing:4725156
 
 link of gerber files: https://oshwlab.com/Gaming_Dub/visual-eq
+
+link of bluetooth app: https://play.google.com/store/apps/details?id=com.keuwl.arduinobluetooth (download then import .kwl file)
 
 links of all the components used:
 - HC-05 bluetooth module: https://www.amazon.it/gp/product/B0722MD4FY/ref=ppx_yo_dt_b_asin_title_o01_s00?ie=UTF8&psc=1
