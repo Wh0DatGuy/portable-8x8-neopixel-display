@@ -16,6 +16,7 @@ link of gerber files: https://oshwlab.com/Gaming_Dub/visual-eq
 link of bluetooth app: https://play.google.com/store/apps/details?id=com.keuwl.arduinobluetooth (download then import .kwl file)
 
 links of all the components used:
+- mic module: https://www.amazon.it/gp/product/B07MY293KD/ref=ppx_yo_dt_b_asin_title_o00_s01?ie=UTF8&psc=1
 - HC-05 bluetooth module: https://www.amazon.it/gp/product/B0722MD4FY/ref=ppx_yo_dt_b_asin_title_o01_s00?ie=UTF8&psc=1
 - MSGEQ7 chip: https://www.sparkfun.com/products/10468
 - display: https://www.amazon.it/gp/product/B078HYP681/ref=ppx_yo_dt_b_asin_title_o00_s00?ie=UTF8&psc=1
