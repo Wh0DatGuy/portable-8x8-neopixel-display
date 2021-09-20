@@ -101,7 +101,7 @@ void VisualEq() {
 //Calculate and display battery level
 void BattLevel() {
   float BattVolt = analogRead(BattRead) * (5.0 / 1023.0);
-  byte BattToPixel = BattVolt * (VOres / 4);
+  int BattToPixel = (BattVolt - 3.2) * (VOres / (4 - 3.2));
   for (byte h = 0; h < BattToPixel; h++) {
     DispBuffer[VOres - 1][h] = 1;
   }
