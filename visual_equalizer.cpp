@@ -3,6 +3,7 @@
 #include <letters.h>
 //pins
 #define STROBE_PIN 4
+#define MIC_EN 5
 #define ANALOG_PIN A0
 #define BattRead A4
 #define RESET_PIN 2
@@ -12,10 +13,8 @@
 #define B_1 10
 #define B_2 9
 #define B_3 8
-#define BT_TX_PIN 6
-#define BT_RX_PIN 5
 //delay values
-#define InitSensy 630
+#define InitSensy 450
 #define LettDelay 800
 #define LettOffDelay 200
 #define InitSwDelay 250
@@ -37,6 +36,7 @@ long t1;
 byte LettNumb = 0, MenuLett;
 bool fLettMenuReset = false;
 bool DispBuffer[VOres + 1][VOres];
+bool fMicOn;
 //library initializations
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(64, WS2812_PIN, NEO_GRB + NEO_KHZ800);
 //cycle trough colours to create rainbow effect
@@ -44,12 +44,14 @@ void increasej() {
   static long t0;
   if ((millis() - t0) >= Speedy) {
     if (j < 256) {
-      if (Direction == 1)
+      if (Direction == 1) {
         j++;
-      else
+      } else {
         j--;
-    } else
+      }
+    } else {
       j = 0;
+    }
     t0 = millis();
   }
 }
@@ -76,19 +78,21 @@ void readMSGEQ7() {
     bandValues[bandNo] = analogRead(ANALOG_PIN);
     digitalWrite(STROBE_PIN, HIGH);
 
-    if (bandValues[bandNo] > oBandValues)
+    if (bandValues[bandNo] > oBandValues) {
       oBandValues = bandValues[bandNo];
+    }
   }
-  if (oBandValues >= Sensy)
+  if (oBandValues >= Sensy) {
     oBandValues--;//always fit bars on 8 pixels
-  else if (Sensy == InitSensy)
+  } else if (Sensy == InitSensy) {
     oBandValues = Sensy;
+  }
 }
 //visual equalizer
 void VisualEq() {
   readMSGEQ7();
   for (bandNo = 0; bandNo < EqAnBars; bandNo++) {
-    byte toY = map(bandValues[bandNo], 30, oBandValues, 0, VOres);
+    int toY = map(bandValues[bandNo], 30, oBandValues, 0, VOres);
     for (byte h = 0; h < toY; h++) {
       DispBuffer[bandNo][h] = 1;
     }
@@ -380,7 +384,7 @@ void setup() {
   Brighty = map(analogRead(PHOTOR), 0, 700, 15, 255);
   pinMode(RESET_PIN, OUTPUT);
   pinMode(STROBE_PIN, OUTPUT);
-  pinMode(BT_TX_PIN, OUTPUT);
+  pinMode(MIC_EN, OUTPUT);
   digitalWrite(RESET_PIN, LOW);
   digitalWrite(STROBE_PIN, HIGH);
   strip.setBrightness(Brighty);
@@ -399,9 +403,14 @@ void loop() {
   } else switch (MenuMode) {
   default:
     fLettMenuReset = true;
-    if (digitalRead(BATTVS)) {//remove "//" when circuit upgraded
-      VisualEq();
+    if (digitalRead(BATTVS)) {
+      fMicOn = false;
+    } else {
+      bandValues[3] = bandValues[3] - 60;
+      fMicOn = true;
     }
+    digitalWrite(MIC_EN, fMicOn);
+    VisualEq();
     BattLevel();
     break;
   case 3:
