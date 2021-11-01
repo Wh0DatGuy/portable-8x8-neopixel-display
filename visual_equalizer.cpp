@@ -14,7 +14,7 @@
 #define B_2 9
 #define B_3 8
 //delay values
-#define InitSensy 450
+#define InitSensy 630
 #define LettDelay 800
 #define LettOffDelay 200
 #define InitSwDelay 250
@@ -404,10 +404,10 @@ void loop() {
   default:
     fLettMenuReset = true;
     if (digitalRead(BATTVS)) {
-      fMicOn = false;
+      fMicOn = true;
     } else {
       bandValues[3] = bandValues[3] - 60;
-      fMicOn = true;
+      fMicOn = false;
     }
     digitalWrite(MIC_EN, fMicOn);
     VisualEq();
