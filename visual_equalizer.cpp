@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <Adafruit_NeoPixel.h>
-#include <letters.h>
 //pins
 #define STROBE_PIN 4
 #define MIC_EN 5
@@ -24,6 +23,7 @@ unsigned int SwDelay = InitSwDelay;
 //constant variables
 #define EqAnBars 7
 #define VOres 8
+#include <letter_experimental.h>
 //global variables
 int bandValues[EqAnBars], oBandValues, bandNo;
 byte j;
@@ -40,110 +40,149 @@ bool fMicOn;
 //library initializations
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(64, WS2812_PIN, NEO_GRB + NEO_KHZ800);
 //cycle trough colours to create rainbow effect
-void increasej() {
+void increasej()
+{
   static long t0;
-  if ((millis() - t0) >= Speedy) {
-    if (j < 256) {
-      if (Direction == 1) {
+  if ((millis() - t0) >= Speedy)
+  {
+    if (j < 256)
+    {
+      if (Direction == 1)
+      {
         j++;
-      } else {
+      }
+      else
+      {
         j--;
       }
-    } else {
+    }
+    else
+    {
       j = 0;
     }
     t0 = millis();
   }
 }
 //generates a color based on a 255 value
-uint32_t Wheel(byte WheelPos) {
-  if (WheelPos < 85) {
+uint32_t Wheel(byte WheelPos)
+{
+  if (WheelPos < 85)
+  {
     return strip.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
-  } else if (WheelPos < 170) {
+  }
+  else if (WheelPos < 170)
+  {
     WheelPos -= 85;
     return strip.Color(255 - WheelPos * 3, 0, WheelPos * 3);
-  } else {
+  }
+  else
+  {
     WheelPos -= 170;
     return strip.Color(0, WheelPos * 3, 255 - WheelPos * 3);
   }
 }
 //read MSGEQ7 and store in an array
-void readMSGEQ7() {
+void readMSGEQ7()
+{
   digitalWrite(RESET_PIN, HIGH);
   digitalWrite(RESET_PIN, LOW);
 
-  for (bandNo = 0; bandNo < EqAnBars; bandNo++) {
+  for (bandNo = 0; bandNo < EqAnBars; bandNo++)
+  {
     digitalWrite(STROBE_PIN, LOW);
     delayMicroseconds(30);
     bandValues[bandNo] = analogRead(ANALOG_PIN);
     digitalWrite(STROBE_PIN, HIGH);
 
-    if (bandValues[bandNo] > oBandValues) {
+    if (bandValues[bandNo] > oBandValues)
+    {
       oBandValues = bandValues[bandNo];
     }
   }
-  if (oBandValues >= Sensy) {
-    oBandValues--;//always fit bars on 8 pixels
-  } else if (Sensy == InitSensy) {
+  if (oBandValues >= Sensy)
+  {
+    oBandValues--; //always fit bars on 8 pixels
+  }
+  else if (Sensy == InitSensy)
+  {
     oBandValues = Sensy;
   }
 }
 //visual equalizer
-void VisualEq() {
+void VisualEq()
+{
   readMSGEQ7();
-  for (bandNo = 0; bandNo < EqAnBars; bandNo++) {
+  for (bandNo = 0; bandNo < EqAnBars; bandNo++)
+  {
     int toY = map(bandValues[bandNo], 30, oBandValues, 0, VOres);
-    for (byte h = 0; h < toY; h++) {
+    for (byte h = 0; h < toY; h++)
+    {
       DispBuffer[bandNo][h] = 1;
     }
   }
 }
 //Calculate and display battery level
-void BattLevel() {
+void BattLevel()
+{
   float BattVolt = analogRead(BattRead) * (5.0 / 1023.0);
   int BattToPixel = (BattVolt - 3.2) * (VOres / (4 - 3.2));
-  for (byte h = 0; h < BattToPixel; h++) {
+  for (byte h = 0; h < BattToPixel; h++)
+  {
     DispBuffer[VOres - 1][h] = 1;
   }
 }
 //display  full screen rainbow effect
-void DispRainbow() {
-  for (byte l = 0; l < VOres; l++) {
-    for (byte h = 0; h < VOres; h++) {
+void DispRainbow()
+{
+  for (byte l = 0; l < VOres; l++)
+  {
+    for (byte h = 0; h < VOres; h++)
+    {
       DispBuffer[l][h] = 1;
     }
   }
 }
 //display letters
-void DispAlphabet(byte DMode, byte SLettNumber = 0, byte NxSLettNumber = 0, byte CurLettNumb = 0, byte MaxLettNumb = 1) {
+void DispAlphabet(byte DMode, byte SLettNumber = 0, byte NxSLettNumber = 0, byte CurLettNumb = 0, byte MaxLettNumb = 1)
+{
   static byte offset = 0, oCurLettNumb = 28;
   static long t6 = 0;
-  for (byte l = 0; l < VOres; l++) {
-    for (byte h = 0; h < VOres; h++) {
+  for (byte l = 0; l < VOres; l++)
+  {
+    for (byte h = 0; h < VOres; h++)
+    {
       bool DVal;
-      switch (DMode) {
+      switch (DMode)
+      {
       case 0:
-        DVal = (pgm_read_byte(&LettNumber[SLettNumber][(VOres - 1) - h][l]));
+        DVal = (((LettNumber[SLettNumber][(VOres - 1) - h]) >> l) & 1);
         DispBuffer[l][h] = DVal;
         break;
       case 1:
-        if (CurLettNumb != oCurLettNumb) {
+        if (CurLettNumb != oCurLettNumb)
+        {
           offset = 0;
           oCurLettNumb = CurLettNumb;
           t6 = millis();
         }
-        if (CurLettNumb < (MaxLettNumb - 1)) {
-          if ((millis() - t6) >= (LettDelay / (VOres + 1))) {
-            if (offset < VOres) {
+        if (CurLettNumb < (MaxLettNumb - 1))
+        {
+          if ((millis() - t6) >= (LettDelay / (VOres + 1)))
+          {
+            if (offset < VOres)
+            {
               offset++;
             }
             t6 = millis();
           }
         }
-        if (l < (VOres - offset)) {
-          DVal = (pgm_read_byte(&LettNumber[SLettNumber][(VOres - 1) - h][l + offset]));
-        } else {
-          DVal = (pgm_read_byte(&LettNumber[NxSLettNumber][(VOres - 1) - h][l - (VOres - (offset - 1))]));
+        if (l < (VOres - offset))
+        {
+          DVal = (((LettNumber[SLettNumber][(VOres - 1) - h]) >> (l + offset)) & 1);
+        }
+        else
+        {
+          DVal = (((LettNumber[NxSLettNumber][(VOres - 1) - h]) >> (l - (VOres - (offset - 1)))) & 1);
         }
         DispBuffer[l][h] = DVal;
         DispBuffer[VOres - offset][h] = 0;
@@ -153,10 +192,14 @@ void DispAlphabet(byte DMode, byte SLettNumber = 0, byte NxSLettNumber = 0, byte
   }
 }
 //view display as horizzontal or vertical
-void VerticalOrHorizontal() {
-  for (byte l = 0; l < VOres; l++) {
-    for (byte h = 0; h < VOres; h++) {
-      switch (DisplayMode) {
+void VerticalOrHorizontal()
+{
+  for (byte l = 0; l < VOres; l++)
+  {
+    for (byte h = 0; h < VOres; h++)
+    {
+      switch (DisplayMode)
+      {
       case 0 /*vertical*/:
         fMode = (l * VOres) + h;
         break;
@@ -171,39 +214,50 @@ void VerticalOrHorizontal() {
   }
 }
 
-void buffer_clear() {
-  for (byte l = 0; l < VOres; l++) {
-    for (byte h = 0; h < VOres; h++) {
+void buffer_clear()
+{
+  for (byte l = 0; l < VOres; l++)
+  {
+    for (byte h = 0; h < VOres; h++)
+    {
       DispBuffer[l][h] = false;
     }
   }
 }
 //clear display for DelayVal seconds
-void ClearWithDelay(int DelayVal) {
+void ClearWithDelay(int DelayVal)
+{
   strip.clear();
   strip.show();
   delay(DelayVal);
 }
 //letter menu to compose phrases
-void LettMenu() {
+void LettMenu()
+{
   static int PhraseL, Phrase[20];
   static long t2, t3;
   static bool LettSel = true;
   static byte i;
   static bool fkReset = false;
-  if (fLettMenuReset) {
+  if (fLettMenuReset)
+  {
     LettSel = true;
     fkReset = true;
     LettDis = false;
     fLettMenuReset = false;
   }
-  if (LettSel) {
-    if (digitalRead(B_1) || digitalRead(B_3)) {
+  if (LettSel)
+  {
+    if (digitalRead(B_1) || digitalRead(B_3))
+    {
       t2 = millis();
       LettMemEn = true;
-    } else if ((((millis() - t2) >= LettDelay) && LettMemEn) || LettSave) {
+    }
+    else if ((((millis() - t2) >= LettDelay) && LettMemEn) || LettSave)
+    {
       ClearWithDelay(LettOffDelay);
-      if (fkReset) {
+      if (fkReset)
+      {
         PhraseL = 0;
         fkReset = false;
       }
@@ -212,18 +266,25 @@ void LettMenu() {
       LettMemEn = false;
       LettSave = false;
     }
-    if ((digitalRead(B_1) && digitalRead(B_3)) || LettDis) {
+    if ((digitalRead(B_1) && digitalRead(B_3)) || LettDis)
+    {
       ClearWithDelay(LettOffDelay);
       LettSel = false;
       i = 0;
       t3 = millis();
     }
     DispAlphabet(0, LettNumb);
-  } else {
-    if (millis() - t3 >= LettDelay) {
-      if (i < (PhraseL - 1)) {
+  }
+  else
+  {
+    if (millis() - t3 >= LettDelay)
+    {
+      if (i < (PhraseL - 1))
+      {
         i++;
-      } else {
+      }
+      else
+      {
         i = 0;
         ClearWithDelay(LettDelay);
       }
@@ -233,11 +294,15 @@ void LettMenu() {
   }
 }
 //increase or decrease to 0 given value using B1 and B3
-int IncrDecr(int MaxVal, int Val, byte Step) {
-  if (digitalRead(B_3)) {
+int IncrDecr(int MaxVal, int Val, byte Step)
+{
+  if (digitalRead(B_3))
+  {
     Val += Step;
     t1 = millis();
-  } else if (digitalRead(B_1)) {
+  }
+  else if (digitalRead(B_1))
+  {
     Val -= Step;
     t1 = millis();
   }
@@ -248,8 +313,10 @@ int IncrDecr(int MaxVal, int Val, byte Step) {
   return Val;
 }
 //display menu letter when selected
-void MenuLettSel() {
-  switch (MenuMode) {
+void MenuLettSel()
+{
+  switch (MenuMode)
+  {
   case 0 /*brightness*/:
     MenuLett = 1; //B
     break;
@@ -272,8 +339,10 @@ void MenuLettSel() {
   DispAlphabet(0, MenuLett);
 }
 //modify values of said menu
-void SettChange() {
-  switch (MenuMode) {
+void SettChange()
+{
+  switch (MenuMode)
+  {
   case 0 /*brightness*/:
     Brighty = IncrDecr(255, Brighty, 15);
     if (Brighty == 0)
@@ -287,7 +356,7 @@ void SettChange() {
     DisplayMode = IncrDecr(1, DisplayMode, 1);
     break;
   case 3 /*writing mode*/:
-    LettNumb = IncrDecr(26, LettNumb, 1);
+    LettNumb = IncrDecr(25, LettNumb, 1);
     break;
   case 4 /*direction*/:
     Direction = IncrDecr(1, Direction, 1);
@@ -300,37 +369,49 @@ void SettChange() {
   }
 }
 //change selected menu using B2
-void Menu() {
+void Menu()
+{
   static long t4;
-  if ((!digitalRead(B_1)) && (!digitalRead(B_2)) && (!digitalRead(B_3))) {
+  if ((!digitalRead(B_1)) && (!digitalRead(B_2)) && (!digitalRead(B_3)))
+  {
     SwDelay = InitSwDelay;
     t1 = millis() + SwDelay;
-  } else if ((millis() - t1) >= SwDelay) {
+  }
+  else if ((millis() - t1) >= SwDelay)
+  {
     SwDelay -= StepSwDelay;
-    if (SwDelay <= MinSwDelay) {
+    if (SwDelay <= MinSwDelay)
+    {
       SwDelay = MinSwDelay;
     }
-    if (digitalRead(B_2)) {
+    if (digitalRead(B_2))
+    {
       t1 = millis();
       t4 = millis();
       if (MenuMode < 5)
         MenuMode++;
       else
         MenuMode = 0;
-    } else if (!fMenuLabel)
+    }
+    else if (!fMenuLabel)
       SettChange();
   }
-  if (((millis() - t4) <= LettDelay)) {
+  if (((millis() - t4) <= LettDelay))
+  {
     fLettMenuReset = true;
     fMenuLabel = true;
     MenuLettSel();
-  } else
+  }
+  else
     fMenuLabel = false;
 }
 
-void bluetooth() {
-  while (Serial.available() > 0) {
-    switch (Serial.read()) {
+void bluetooth()
+{
+  while (Serial.available() > 0)
+  {
+    switch (Serial.read())
+    {
     case 'x':
       break;
     case 'O':
@@ -375,7 +456,8 @@ void bluetooth() {
   }
 }
 //main program
-void setup() {
+void setup()
+{
   strip.begin();
   Serial.begin(9600);
   strip.show();
@@ -390,7 +472,8 @@ void setup() {
   strip.setBrightness(Brighty);
 }
 
-void loop() {
+void loop()
+{
   strip.clear();
   buffer_clear();
   increasej();
@@ -398,29 +481,36 @@ void loop() {
   Menu();
   bluetooth();
 
-  if (digitalRead(B_2) || fMenuLabel) {
+  if (digitalRead(B_2) || fMenuLabel)
+  {
     LettMemEn = false; //if exit letter menu reset letter timer
-  } else switch (MenuMode) {
-  default:
-    fLettMenuReset = true;
-    if (digitalRead(BATTVS)) {
-      fMicOn = true;
-    } else {
-      bandValues[3] = bandValues[3] - 60;
-      fMicOn = false;
-    }
-    digitalWrite(MIC_EN, fMicOn);
-    VisualEq();
-    BattLevel();
-    break;
-  case 3:
-    LettMenu();
-    break;
-  case 4:
-  case 5:
-    DispRainbow();
-    break;
   }
+  else
+    switch (MenuMode)
+    {
+    default:
+      fLettMenuReset = true;
+      if (digitalRead(BATTVS))
+      {
+        fMicOn = true;
+      }
+      else
+      {
+        bandValues[3] = bandValues[3] - 60;
+        fMicOn = false;
+      }
+      digitalWrite(MIC_EN, fMicOn);
+      VisualEq();
+      BattLevel();
+      break;
+    case 3:
+      LettMenu();
+      break;
+    case 4:
+    case 5:
+      DispRainbow();
+      break;
+    }
 
   VerticalOrHorizontal();
 
