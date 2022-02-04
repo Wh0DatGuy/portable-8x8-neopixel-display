@@ -1,6 +1,0 @@
-add button for settings (brightness/savescreen/sensitivity) - done
-put together DAlphabet and rainbow function - done
-il testo deve scorrere da destra verso sinistra - done
-aggiungere una riga vuota tra la prima e la seconda lettera - done
-remove while on the phrase part of code - done
-add lower case letters - to do
