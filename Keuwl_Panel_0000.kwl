@@ -1,5 +1,5 @@
 Keuwlsoft Bluetooth Electronics Panel File
-2021-09-20 10:28:37
+2022-02-04 22:35:52
 2
 
 *.kwl
@@ -40,6 +40,7 @@ add_text(10,5,large,C,B,245,240,245,)
 add_text(11,5,large,C,N,245,240,245,)
 add_text(12,5,large,C,M,245,240,245,)
 add_text(14,5,large,C,space,245,240,245,)
+add_text_box(13,7,2,L,Capital,245,240,245,)
 add_button(0,5,2,O,)
 add_button(0,7,4,d,)
 add_button(1,7,5,D,)
@@ -73,8 +74,9 @@ add_button(9,6,24,M21,s)
 add_button(10,6,24,M1,s)
 add_button(11,6,24,M13,s)
 add_button(12,6,24,M12,s)
-add_button(14,6,24,M26,s)
-add_slider(0,1,1,1,17,2,B,x,0)
+add_button(14,6,24,M52,s)
+add_switch(13,8,1,a,A,0,0)
+add_slider(0,1,1,1,17,1,B,x,0)
 add_slider(6,8,1,4,10,5,S,x,0)
 add_slider(0,3,1,0,5,5,V,x,0)
 set_panel_notes(,,,)
